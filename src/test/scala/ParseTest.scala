@@ -14,9 +14,6 @@ class ParseTest extends FlatSpec {
   it should "parse from file" in {
     ApiTest.parse(new File("./src/test/testFile")) should be (Some(Map("key" -> "value").asJson))
   }
-
-
-
 }
 //matcher
 //circe asJson kullan
