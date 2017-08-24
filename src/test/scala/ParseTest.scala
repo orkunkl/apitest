@@ -7,13 +7,12 @@ import io.circe.syntax._
 
 class ParseTest extends FlatSpec {
 
-  "Parser" should "parse from string" in {
-    ApiTest.parse("""{"key": "value"}""") should be (Some(Map("key" -> "value").asJson))
+  val jsonArray = List(Map("ford" -> "fast"), Map("ford" -> "fast")).asJson
+
+  "Parser" should "parse JsonArray to Vector[JsonObject]" in {
+    ApiTest.parseToArray(jsonArray, "json array") should be ('right)
   }
 
-  it should "parse from file" in {
-    ApiTest.parse(new File("./src/test/testFile")) should be (Some(Map("key" -> "value").asJson))
-  }
 }
 //matcher
 //circe asJson kullan

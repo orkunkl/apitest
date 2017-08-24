@@ -7,15 +7,15 @@ import io.circe.syntax._
 
 class SizeTest extends FlatSpec {
 
-  val array1 = List(1, 2, 3).asJson.asArray.get
-  val array2 = List("a", "b", "c").asJson.asArray.get
-  val array3 = List("a", "b", "c", "s").asJson.asArray.get
+  val array1 = Map("a" -> "b").asJson.asObject.get
+  val array2 = Map("a" -> "b").asJson.asObject.get
+  val array3 = Map("a" -> "b", "c" -> "d").asJson.asObject.get
 
   "Size" should "be equal" in {
     ApiTest.sizeTest(array1, array2) should be ('right)
   }
 
-  it should "be not equal" in {
+  it should "not be equal" in {
     ApiTest.sizeTest(array1, array3) should be ('left)
   }
 }
