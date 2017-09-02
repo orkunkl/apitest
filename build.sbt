@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
-  "com.github.nscala-time" %% "nscala-time" % "2.16.0"
+  "com.github.nscala-time" %% "nscala-time" % "2.16.0",
+  "com.chuusai" %% "shapeless" % "2.3.2"
 )
         
