@@ -2,7 +2,7 @@ package ApiTest
 
 import DataTypes.DataTypes._
 import com.github.nscala_time.time.RichDateTime
-import io.circe.{JsonObject, _}
+import io.circe.{Json, _}
 import org.http4s.Uri
 import org.http4s.circe._
 import org.http4s.client.blaze.{PooledHttp1Client, _}
@@ -10,7 +10,7 @@ import com.typesafe.scalalogging._
 import io.circe.Decoder.Result
 import org.http4s.client.Client
 import com.github.nscala_time.time.Imports._
-import io.circe.Json.{JArray, JObject, JString}
+import io.circe.Json.{JArray, JObject}
 
 //import scala.collection.mutable.RedBlackTree.Tree
 import scala.collection.{SortedMap, mutable}
@@ -21,7 +21,7 @@ object ApiTest {
 
   val logger = Logger("test")
 
-  /*def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
 
     val httpClient = PooledHttp1Client()
 
@@ -36,10 +36,8 @@ object ApiTest {
       (resApiJson, apiJson) = callTry
       _ = logger.info("resApiJson " + resApiJson)
       _ = logger.info("apiJson " + apiJson)
-
-      resApiJsonObject <- parseToArray(resApiJson, "Resource api")
-      apiJsonObject <- parseToObject(apiJson, "api")
-      testResult <- test(resApiJsonObject, apiJsonObject)
+      apiJsonValue <- apiJson.as[JsonObject].flatMap(_.apply("value").toRight("value not found on api"))
+      testResult <- test(resApiJson, apiJsonValue)
     } yield testResult
 
 
@@ -49,12 +47,10 @@ object ApiTest {
     }
     httpClient.shutdownNow()
   }
-*/
-  def test(resApi: Vector[JsonObject], api: JsonObject): Either[String, List[String]] =
+
+  def test(resApi: Json, api: Json): Either[String, List[String]] =
     for {
-      apiJsonArrayUnparsed <- api.apply("value").toRight("parsing error to value")
-      apiJsonArray <- parseToArray(apiJsonArrayUnparsed, "api")
-      _ <- sizeTest(resApi, apiJsonArray)
+      _ <- sizeTest(resApi, api)
       testResult <- fieldSizeTest(resApi.head, apiJsonArray.head, List.empty[String])
     } yield testResult
 
@@ -77,33 +73,42 @@ object ApiTest {
     } yield (resUrl, apiUrl)
 
   // Unacceptable test. Stops the whole test if size test fails
-  def sizeTest(res: Vector[JsonObject], api: Vector[JsonObject]): Either[String, Unit] = {
-    if(res.size == api.size)
-      if(res.isEmpty) Left("Empty values, No errors have found") else Right()
-    else
-      Left("sizes do not match. Expected = " + res.size + " Found = " + api.size)
-  }
+  def sizeTest(res: Json, api: Json): Either[String, Unit] = {
+    (res, api) match {
+      case _ if(res.isArray && api.isArray) =>
+        val resApiSize = res.asArray.get.size
+        val apiSize = api.asArray.get.size
+        if(resApiSize == apiSize) Right()
+        else Left("Sizes are not equal, resource = " + resApiSize + ", api = " + apiSize)
+      case _ if(res.isObject && api.isObject) => Right()
+      case _ => Left("Resource api and api json types do not match! resource = " +
+                        res.arrayOrObject("", _ => "array", _ => "object") + ", api = " + api.arrayOrObject("", _ => "array", _ => "object"))
 
-  // Acceptable test. Does not stop the whole test if size test fails
-  def fieldSizeTest(res: JsonObject, api: JsonObject, errorList: List[String]): Either[String, List[String]] = {
-    val differences = mutable.MutableList.empty[String]
-    var indent = 1
-
-    val rootDifferences = res.fields.diff(api.fields)
-    if(rootDifferences.nonEmpty){
-      indent = indent + 1
-      differences += "resource api root:\n"
-      val indentRoot = (0 to indent).map("\t").reduce(_ + _)
-      differences ++= res.fields.diff(api.fields).map(indentRoot + _ + " has not found on api")
     }
-    val childDifferences = res.filterKeys(x => !rootDifferences.contains(x)).toList.
-      foldLeft(List.empty[String])((a,b) => a +: fieldSizeTest(res(b), api(b), List.empty[String]).getOrElse(List.empty[String]))
-
-     Right(errorList)
+  }
+  // Acceptable test. Does not stop the whole test if size test fails
+  def fieldMatchTest(res: Json, api: Json, indentation: Int = 1): Either[String, List[String]] = {
+    res.arrayOrObject(
+      Right(List.empty[String]),
+      resArray => {
+        api.asArray.toRight((0 to indentation).map(_ => "\t").mkString("") + api.name + " is not an array as")
+          .map(apiArray => resArray.zip(apiArray).)
+      }
+    )
   }
 
 
-  def fieldMatchTest(resApi: Json, api: Json, errorList: List[String]): Either[String, List[String]] = resApi.
+  /*def ValueMatchTest[A](res: Json, api: Json, errorList: List[String], indentation: Int = 1)(f: (Json, Json) => A): Either[String, List[A]] = {
+    res.fold(
+      if(api.isNull) Right(List.empty[String]) else Left(res + " is null but api is not"),
+      boolean => if(api.isBoolean) f()
+
+    )}*/
+
+
+
+  def fieldMatchTest(resApi: JsonObject, api: Json, errorList: List[String]): Either[String, List[String]] = ???
+
 
 
   //def compareArrays
@@ -115,11 +120,11 @@ object ApiTest {
   def parseToArray(json: Json, name: String): Either[String, Vector[JsonObject]] =
     json.asArray.toRight("error on parsing " + name + " to array").map(x => x.flatMap(_.asObject))
 
-  def zipJsons[A](resJson: Json, apiJson: Json)(f: Json => A): Either[String, Traversable[A]] = {
+  /*def zipJsons[A](resJson: Json, apiJson: Json)(f: Json => A): Either[String, Traversable[A]] = {
     resJson.toList.foldLeft(rhs) {
       case (acc, (key, value)) =>
         rhs(key).fold(acc.add(key, value)) { r => acc.add(key, value.deepMerge(r)) }
     }
-  }
+  }*/
   //def typeParser(value: String)
 }
