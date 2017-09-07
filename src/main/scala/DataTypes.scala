@@ -1,40 +1,40 @@
 package DataTypes
-import io.circe.{Decoder, DecodingFailure, HCursor}
+import cats.Eq
+import io.circe._
 import com.github.nscala_time.time.Imports._
-import com.github.nscala_time.time.RichDateTime
+import io.circe.Json.{JArray, JBoolean, JNumber, JObject, JString}
 import org.joda.time.{DateTime => JodaDateTime}
+import shapeless.ops.coproduct.Folder
+import shapeless.{Coproduct, Generic}
+
+
+import scala.util.Try
 
 object DataTypes {
 
-  trait Value extends  Any{
+  trait Value extends Any {
     def equals(obj: Value): Boolean
   }
 
-  implicit class DateTime(val self: RichDateTime) extends Value {
-     def equals(obj: Value): Boolean =
-       obj.isInstanceOf[DateTime] && obj.asInstanceOf[DateTime].self.equals(this)
+  implicit class ValueDateTime(val self: DateTime) extends Value {
+    def equals(obj: Value): Boolean = obj equals self
   }
 
 
-  implicit class DateTimeWithZone(val self: RichDateTime) extends Value {
-    def equals(obj: Value): Boolean =
-      obj.isInstanceOf[DateTime] && obj.asInstanceOf[DateTime].self.equals(this)
+  implicit class ValueDateTimeWithZone(val self: DateTime) extends Value {
+    def equals(obj: Value): Boolean = obj equals self
   }
-
-  implicit class ValueString(val self: String) extends Value {
-    def equals(obj: Value): Boolean =
-      obj.isInstanceOf[String] && obj.asInstanceOf[String] == this
-  }
-
 
   implicit val decodeValue: Decoder[Value] = new Decoder[Value] {
     final def apply(c: HCursor): Decoder.Result[Value] = {
       for {
-        focus <- c.focus.toRight("couldn't get the focus")
-        json <- focus.asBoolean.orElse(focus.asNumber).orElse(focus.asString).map(_.toString).toRight("value couldnt be parsed")
-      } yield {
-        json
-      }
+        focus <- c.focus.toRight(DecodingFailure("could not get focus", c.history))
+        value <- focus.asString.toRight(DecodingFailure("could not get focus", c.history)).flatMap(x =>
+          Try(DateTime.parse(x)).toEither.left.map(err => DecodingFailure.fromThrowable(err, c.history))
+            .map(_ =>DateTime.parse(x.splitAt(x.length-1)._1).asInstanceOf[Value]).left.map(err => DecodingFailure.fromThrowable(err, c.history))
+        )
+      } yield value
+
     }
   }
 }

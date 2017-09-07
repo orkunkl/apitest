@@ -18,7 +18,6 @@ class ParseTest extends FlatSpec {
   println(jsonObjectWithoutQuote)
 
   "Parser" should "parse JsonArray to Vector[JsonObject]" in {
-    ApiTest.parseToArray(jsonArray, "json array") should be ('right)
   }
 
   it should "not match jsonObjectWithQuote and jsonObjectWithoutQuote" in {
