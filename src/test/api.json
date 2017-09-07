@@ -1,0 +1,44 @@
+{
+  "@odata.context": "https://cheetah.rc-socrata.com/api/odata/v4/$metadata#y8rf-3nrp",
+  "value": [
+    {
+      "__id": "row-eavs~fc8k~iewa",
+      "date_spain_format": "2016-03-21T00:00:00Z",
+      "date_us_format": "2016-03-21T00:00:00Z",
+      "euro_money": 25.0,
+      "non_special_characters": "Republic",
+      "number_spain_format": 1234567,
+      "number_us_format": 123456,
+      "percent_spain_format": 0.123,
+      "percent_us_format": 1.23,
+      "special_characters": "Republicà",
+      "us_money": 2500.0
+    },
+    {
+      "__id": "row-ynau_6pqm~5ant",
+      "date_spain_format": "2016-04-22T00:00:00Z",
+      "date_us_format": "2016-04-22T00:00:00Z",
+      "euro_money": 125.0,
+      "non_special_characters": "Yes",
+      "number_spain_format": 2345.67,
+      "number_us_format": 234567,
+      "percent_spain_format": 0.234,
+      "percent_us_format": 2.34,
+      "special_characters": "Sí",
+      "us_money": 12500.0
+    },
+    {
+      "__id": "row-3ced_pppd.e7py",
+      "date_spain_format": "2016-05-23T00:00:00Z",
+      "date_us_format": "2016-05-23T00:00:00Z",
+      "euro_money": 1125.0,
+      "non_special_characters": "Words",
+      "number_spain_format": 3456.78,
+      "number_us_format": 345678,
+      "percent_spain_format": 0.345,
+      "percent_us_format": 3.45,
+      "special_characters": "Alt Àneu",
+      "us_money": 112500.0
+    }
+  ]
+}

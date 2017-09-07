@@ -1,0 +1,38 @@
+[
+  {
+    "date_spain_format": "2016-03-21T00:00:00",
+    "date_us_format": "2016-03-21T00:00:00",
+    "euro_money": "25.00",
+    "non_special_characters": "Republic",
+    "number_spain_format": "1234567",
+    "number_us_format": "123456",
+    "percent_spain_format": "12.3",
+    "percent_us_format": "123",
+    "special_characters": "Republicà",
+    "us_money": "2500.00"
+  },
+  {
+    "date_spain_format": "2016-04-22T00:00:00",
+    "date_us_format": "2016-04-22T00:00:00",
+    "euro_money": "125.00",
+    "non_special_characters": "Yes",
+    "number_spain_format": "2345.67",
+    "number_us_format": "234567",
+    "percent_spain_format": "23.4",
+    "percent_us_format": "234",
+    "special_characters": "Sí",
+    "us_money": "12500.00"
+  },
+  {
+    "date_spain_format": "2016-05-23T00:00:00",
+    "date_us_format": "2016-05-23T00:00:00",
+    "euro_money": "1125.00",
+    "non_special_characters": "Words",
+    "number_spain_format": "3456.78",
+    "number_us_format": "345678",
+    "percent_spain_format": "34.5",
+    "percent_us_format": "345",
+    "special_characters": "Alt Àneu",
+    "us_money": "112500.00"
+  }
+]

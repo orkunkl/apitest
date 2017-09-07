@@ -1,0 +1,13 @@
+{
+  "__id": "row-eavs~fc8k~iewa",
+  "date_spain_format": "2016-03-21T00:00:00Z",
+  "date_us_format": "2016-03-21T00:00:00Z",
+  "euro_money": 25.0,
+  "non_special_characters": "Republic",
+  "number_spain_format": 1234567,
+  "number_us_format": 123456,
+  "percent_spain_format": 0.123,
+  "percent_us_format": 1.23,
+  "special_characters": "Republicà",
+  "us_money": 2500.0
+}

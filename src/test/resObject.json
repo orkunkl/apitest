@@ -1,0 +1,12 @@
+{
+      "date_spain_format": "2016-03-21T00:00:00",
+      "date_us_format": "2016-03-21T00:00:00",
+      "euro_money": "25.00",
+      "non_special_characters": "Republic",
+      "number_spain_format": "1234567",
+      "number_us_format": "123456",
+      "percent_spain_format": "12.3",
+      "percent_us_format": "123",
+      "special_characters": "Republicà",
+      "us_money": "2500.00"
+}

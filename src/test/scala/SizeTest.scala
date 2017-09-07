@@ -11,7 +11,7 @@ class SizeTest extends FlatSpec {
   val array2 = Map("a" -> "b").asJson.asObject.get
   val array3 = Map("a" -> "b", "c" -> "d").asJson.asObject.get
 
- /* "Size" should "be equal" in {
+  /* "Size" should "be equal" in {
     ApiTest.sizeTest(array1, array2, List.empty[String]) should be ('right)
   }
 
@@ -21,4 +21,3 @@ class SizeTest extends FlatSpec {
 }
 //matcher
 //circe asJson kullan
-

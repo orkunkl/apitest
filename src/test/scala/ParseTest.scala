@@ -9,16 +9,12 @@ import io.circe.syntax._
 
 class ParseTest extends FlatSpec {
 
-  val jsonArray = List(Map("ford" -> "fast"), Map("ford" -> "fast")).asJson
-  val jsonObjectWithQuote = Map("xd" -> """3""").asJson
-  val jsonObjectWithoutQuote = Map("xd" -> 3).asJson
+  val jsonArray               = List(Map("ford" -> "fast"), Map("ford" -> "fast")).asJson
+  val jsonObjectWithQuote     = Map("xd" -> """3""").asJson
+  val jsonObjectWithoutQuote  = Map("xd" -> 3).asJson
   val jsonObjectWithoutQuote2 = Map("xd" -> 3.toString).asJson
 
-  println(jsonObjectWithQuote)
-  println(jsonObjectWithoutQuote)
-
-  "Parser" should "parse JsonArray to Vector[JsonObject]" in {
-  }
+  "Parser" should "parse JsonArray to Vector[JsonObject]" in {}
 
   it should "not match jsonObjectWithQuote and jsonObjectWithoutQuote" in {
     jsonObjectWithQuote should be equals jsonObjectWithQuote
@@ -29,4 +25,3 @@ class ParseTest extends FlatSpec {
 }
 //matcher
 //circe asJson kullan
-
