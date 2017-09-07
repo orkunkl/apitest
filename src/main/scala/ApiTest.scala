@@ -131,43 +131,17 @@ object ApiTest {
                        api: JsonObject,
                        trace: List[String]): Either[String, List[FoundError]] = {
 
-    val r = for (f <- api.fields.toSet union res.fields.toSet)
-      yield
-        (res(f), api(f)) match {
-          case (Some(r), Some(a)) => // ikisinde de var, kiyasla
-          case (None, Some(a))    => //reste yok apide var
-          case (Some(r), None)    => // reste var. apide yok
-          case _                  => // mumkun degil
-        }
-    /*
-    val resList = res.toList
-    val apiList = api.toList
-
-    val resFields = resList.map(_._1)
-    val apiFields = apiList.map(_._1)
-
-    val resMinusApi =
-      resList.filter(element => apiFields.contains(element._1))
-
-    val apiMinusRes =
-      apiList.filterNot(element => resFields.contains(element._1))
-
-    val fieldDifferences =
-      resFields.diff(apiFields).map(x => FoundError(trace, s"$x not found on api"))
-
-    val resDiffed =
-      resList.filterNot(element => resMinusApi.map(_._1).contains(element._1)).sortBy(_._1)
-    val apiDiffed =
-      resList.filterNot(element => apiMinusRes.map(_._1).contains(element._1)).sortBy(_._1)
-
-    val valueDifferences = resDiffed
-      .zip(apiDiffed)
-      .foldLeft(Right(List.empty[FoundError]): Either[String, List[FoundError]])(
-        (errorsRight, e) => {
-          val newErrors = fieldMatchTest(e._1._2, e._2._2, trace.:+(e._1._1))
-          appendError(errorsRight, newErrors)
-        })
-    valueDifferences*/
+    val r =
+      for (f <- api.fields.toSet union res.fields.toSet)
+        yield
+          (res(f), api(f)) match {
+            case (Some(r), Some(a)) => fieldMatchTest(r, a, trace.:+(r.name))
+            case (None, Some(a))    => Right(List(FoundError.empty))
+            case (Some(r), None)    => Right(List(FoundError(trace, s"${r.name} not found on api")))
+            case _                  => Right(List(FoundError.empty)) // mumkun degil
+          }
+    //TODO change FoundError to something that has unit
+    r.reduce((x, y) => x.flatMap(err1 => y.map(err2 => err1 ++ err2)))
   }
 
   def ValueOperations(res: Json,
@@ -184,5 +158,9 @@ object ApiTest {
 
   case class FoundError(trace: List[String], error: String) {
     override def toString: String = s"Trace = ${trace.reduce(_ + " -> " + _)}, Error = $error"
+    def empty                     = FoundError(List.empty, "")
+  }
+  object FoundError {
+    def empty = FoundError(List.empty, "")
   }
 }
