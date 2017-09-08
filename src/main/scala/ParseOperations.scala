@@ -1,12 +1,15 @@
 package ApiTest
-import ApiTest.FoundError
+import Main.FoundError
 import io.circe.Json
+import com.github.nscala_time.time.Imports._
 
 import scala.util.Try
 
 object ParseOperations {
 
-  def BigDecimalParse(res: Json, api: Json, trace: List[String]): Option[List[FoundError]] = {
+  type ErrorOption = Option[List[FoundError]]
+
+  def BigDecimalComparison(res: Json, api: Json, trace: List[String]): ErrorOption = {
     for {
       resDecimal <- res.asString.flatMap(x => Try(BigDecimal(x)).toOption) orElse res.asNumber
         .flatMap(_.toBigDecimal)
@@ -22,7 +25,7 @@ object ParseOperations {
     }
   }
 
-  def StringParse(res: Json, api: Json, trace: List[String]): Option[List[FoundError]] = {
+  def StringComparison(res: Json, api: Json, trace: List[String]): ErrorOption = {
     for {
       resString <- res.asString
       apiString <- api.asString
@@ -31,4 +34,15 @@ object ParseOperations {
       else List(FoundError(trace, s"Value $resString is not equal to $apiString"))
     }
   }
+
+  def DateTimeComparison(res: Json, api: Json, trace: List[String]): ErrorOption =
+    for {
+      resString   <- res.asString
+      apiString   <- api.asString
+      resDateTime <- Try { DateTime.parse(resString) }.toOption
+      apiDateTime <- Try { DateTime.parse(apiString) }.toOption
+    } yield {
+      if (resDateTime.toLocalDateTime == apiDateTime.toLocalDateTime) List.empty
+      else List(FoundError(trace, s"DateTime $resString is not equal to $apiString"))
+    }
 }

@@ -1,6 +1,7 @@
 import org.scalatest.Matchers._
 import org.scalatest._
-import ApiTest.ApiTest._
+import ApiTest.ParseOperations._
+import ApiTest.Main._
 import io.circe.{Json, JsonObject, ParsingFailure}
 import io.circe.parser._
 import io.circe.syntax._
@@ -55,36 +56,9 @@ class MatchTest extends FlatSpec with EitherValues with OptionValues {
   }
 
   it should "find single field error" in {
-    fieldMatchTest(json1AsJson, json3asJson).right.value should be(
-      List(FoundError(List("root"), "lambo not found on api")))
+    fieldAndValueMatchTest(json1AsJson, json3asJson)(matchFieldAndValues).right.value should be(
+      List(FoundError(List("root", "Object"), "String not found on api"))
+    )
   }
 
-  it should "find single value error" in {
-    fieldMatchTest(json1AsJson, json5AsJson).right.value should be(
-      List(FoundError(List("root", "ford"), "Value fast is not equal to fasd")))
-  }
-
-  it should "match 345 and 3.45 using BiggerDecimal Matching" in {
-    BigDecimalParse("345".asJson, "3.45".asJson, List.empty[String]).value should be(List.empty)
-  }
-  it should "match 345 and 345 using BiggerDecimal Matching" in {
-    BigDecimalParse("345".asJson, "345".asJson, List.empty[String]).value should be(List.empty)
-  }
-
-  it should "match 345 and 345 using BiggerDecimal Matching as, both string" in {
-    BigDecimalParse("""345""".asJson, """345""".asJson, List.empty[String]).value should be(
-      List.empty)
-  }
-
-  it should "match 345 and 345 using BiggerDecimal Matching as, one string" in {
-    BigDecimalParse("345".asJson, """345""".asJson, List.empty[String]).value should be(List.empty)
-  }
-
-  it should "find errors between mock jsons" in {
-    fieldMatchTest(resJson, apiJson).right.value should be(List.empty)
-  }
-  "ObjectOperations" should "find errors between mock jsons" in {
-
-    objectOperations(resObject, apiObject, List("root")).right.value should not be List.empty
-  }
 }
