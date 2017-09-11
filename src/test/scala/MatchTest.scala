@@ -56,7 +56,7 @@ class MatchTest extends FlatSpec with EitherValues with OptionValues {
   }
 
   it should "find single field error" in {
-    fieldAndValueMatchTest(json1AsJson, json3asJson)(matchFieldAndValues).right.value should be(
+    fieldAndValueMatchTest(json1AsJson, json3asJson).right.value should be(
       List(FoundError(List("root", "Object"), "String not found on api"))
     )
   }

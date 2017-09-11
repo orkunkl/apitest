@@ -1,15 +1,14 @@
 package ApiTest
 
+import io.circe.parser.parse
 import io.circe.{Json, _}
 import org.http4s.Uri
 import org.http4s.circe._
-import org.http4s.client.blaze.{PooledHttp1Client, _}
-import com.typesafe.scalalogging._
 import org.http4s.client.Client
-import io.circe.parser.parse
+import org.http4s.client.blaze.PooledHttp1Client
 
-import scala.util.Random
-import scala.util.Try
+import scala.collection.IterableLike
+import scala.util.{Random, Try}
 
 object Main {
 
@@ -26,12 +25,12 @@ object Main {
       _ = println("Resource Api : " + resUrl)
       _ = println("Api : " + apiUrl)
 
-      /*callTry <- Try(httpClient.expect[Json](resUrl).unsafePerformSync,
-                     httpClient.expect[Json](apiUrl).unsafePerformSync).toEither*/
+      callTry <- Try(httpClient.expect[Json](resUrl).unsafePerformSync,
+                     httpClient.expect[Json](apiUrl).unsafePerformSync).toEither
       //callTry <-  (parse(scala.io.Source.fromFile("src/test/resApi.json").mkString),  parse(scala.io.Source.fromFile("src/test/api.json").mkString))
-
-      resApiJson <- parse(scala.io.Source.fromFile("src/test/resApi.json").mkString)
-      apiJson    <- parse(scala.io.Source.fromFile("src/test/api.json").mkString)
+      (resApiJson, apiJson) = callTry
+      /*resApiJson <- parse(scala.io.Source.fromFile("src/test/resApi.json").mkString)
+      apiJson    <- parse(scala.io.Source.fromFile("src/test/api.json").mkString)*/
 
       apiJsonValue <- apiJson
         .as[JsonObject]
@@ -39,7 +38,10 @@ object Main {
       testResult <- test(resApiJson, apiJsonValue)
     } yield testResult
 
-    tests.map(errors => errors.map(println)).left.map(_ => println("No errors"))
+    tests
+      .map(errors => if (errors.isEmpty) println("No Errors Found") else errors.foreach(println))
+      .left
+      .map(_ => println("Unknown error found"))
 
     httpClient.shutdownNow()
   }
@@ -92,18 +94,47 @@ object Main {
       resArray =>
         api.asArray
           .toRight(FoundError(trace, s"${res.name} is an array but ${api.name} is not"))
-          .flatMap(apiArray => compareArraySizes(resArray, apiArray, trace.:+(res.name))),
+          .flatMap(apiArray => compareRecursiveArraySize(resArray, apiArray, trace.:+(res.name))),
       resObject =>
         api.asObject
           .toRight(FoundError(trace, s"${res.name} is an object but ${api.name} is not"))
           .flatMap(apiObject => compareObjectSizes(resObject, apiObject, trace.:+(res.name)))
     )
   }
-  def compareArraySizes(res: Vector[Json], api: Vector[Json], trace: List[String]): ErrorEither =
+  def compareRecursiveArraySize(res: Vector[Json],
+                                api: Vector[Json],
+                                trace: List[String]): ErrorEither = {
+    lazy val arrayComparison =
+      res
+        .zip(api)
+        .zipWithIndex
+        .foldLeft(Right(List.empty[FoundError]): ErrorEither) {
+          case (acc, ((x, y), a)) =>
+            val newErrors = sizeTest(x, y, trace.:+(a.toString))
+            traverse(acc, newErrors)
+        }
+    traverse(compareArraySize(res, api, trace), arrayComparison)
+  }
+  def compareArraySize(res: Vector[Json], api: Vector[Json], trace: List[String]): ErrorEither =
     if (res.size == api.size) Right(List.empty)
     else
       Left(
         FoundError(trace, s"Array sizes are not equal, Resource = ${res.size} Api = ${api.size}"))
+
+  def compareRecursiveObjectSize(res: JsonObject,
+                                 api: JsonObject,
+                                 trace: List[String]): ErrorEither = {
+    lazy val objectComparison =
+      res.toList
+        .zip(api.toList)
+        .zipWithIndex
+        .foldLeft(Right(List.empty[FoundError]): ErrorEither) {
+          case (acc, ((x, y), a)) =>
+            val newErrors = sizeTest(x._2, y._2, trace.:+(a.toString))
+            traverse(acc, newErrors)
+        }
+    traverse(compareObjectSizes(res, api, trace), objectComparison)
+  }
 
   def compareObjectSizes(res: JsonObject, api: JsonObject, trace: List[String]): ErrorEither =
     if (res.size == api.size) Right(List.empty)
@@ -159,20 +190,23 @@ object Main {
   }
 
   def matchFieldAndValues(res: Json, api: Json, trace: List[String] = List("root")): ErrorEither = {
-    val parseProcess = ParseOperations.BigDecimalComparison(res, api, trace) orElse
-      ParseOperations.DateTimeComparison(res, api, trace) orElse
-      ParseOperations.StringComparison(res, api, trace)
-    parseProcess.toRight("Values are not equal")
+    val parseProcess =
+      ParseOperations.BigDecimalComparison(res, api, trace) orElse
+        ParseOperations.DateTimeComparison(res, api, trace) orElse
+        ParseOperations.StringComparison(res, api, trace)
+    parseProcess.toRight(FoundError(trace, s" Unknown type on ${res.name}"))
   }
 
   case class FoundError(trace: List[String], error: String) {
     def tracePrint(): String =
-      if (trace.length == 1) trace.head else trace.reduce(_ + " -> " + _) //if (trace.length < 2) trace.head else trace.reduce(_ + " -> " + _)
+      trace.reduceOption(_ + " -> " + _).getOrElse(if (trace.length == 1) trace.head else "")
+    //if (trace.length == 1) trace.head else {trace.reduceOption(_ + " -> " + _).getOrElse()}//if (trace.length < 2) trace.head else trace.reduce(_ + " -> " + _)
     override def toString: String = s"Trace = ${tracePrint()}, Error = $error"
 
     def isEmpty: Boolean = trace.isEmpty && error != ""
   }
-  def traverse(e1: ErrorEither, e2: ErrorEither): ErrorEither =
+
+  def traverse(e1: ErrorEither, e2: => ErrorEither): ErrorEither =
     for { a <- e1; b <- e2 } yield a ++ b
 
   object FoundError {
