@@ -1,11 +1,6 @@
-import java.io.File
-
+import io.circe.syntax._
 import org.scalatest.Matchers._
 import org.scalatest._
-import ApiTest._
-import io.circe.JsonObject
-import io.circe.parser._
-import io.circe.syntax._
 
 class ParseTest extends FlatSpec {
 

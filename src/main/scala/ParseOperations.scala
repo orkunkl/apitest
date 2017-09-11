@@ -1,8 +1,8 @@
 package ApiTest
+
 import Main.FoundError
 import io.circe.Json
 import com.github.nscala_time.time.Imports._
-
 import scala.util.Try
 
 object ParseOperations {

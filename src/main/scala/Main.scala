@@ -1,13 +1,11 @@
 package ApiTest
 
-import io.circe.parser.parse
 import io.circe.{Json, _}
 import org.http4s.Uri
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.PooledHttp1Client
 
-import scala.collection.IterableLike
 import scala.util.{Random, Try}
 
 object Main {
@@ -200,7 +198,7 @@ object Main {
   case class FoundError(trace: List[String], error: String) {
     def tracePrint(): String =
       trace.reduceOption(_ + " -> " + _).getOrElse(if (trace.length == 1) trace.head else "")
-    //if (trace.length == 1) trace.head else {trace.reduceOption(_ + " -> " + _).getOrElse()}//if (trace.length < 2) trace.head else trace.reduce(_ + " -> " + _)
+
     override def toString: String = s"Trace = ${tracePrint()}, Error = $error"
 
     def isEmpty: Boolean = trace.isEmpty && error != ""

@@ -1,12 +1,9 @@
-import org.scalatest.Matchers._
-import org.scalatest._
-import ApiTest.ParseOperations._
 import ApiTest.Main._
-import io.circe.{Json, JsonObject, ParsingFailure}
 import io.circe.parser._
 import io.circe.syntax._
-
-import scalaz.stream.nio.file
+import io.circe.{Json, JsonObject}
+import org.scalatest.Matchers._
+import org.scalatest._
 
 class MatchTest extends FlatSpec with EitherValues with OptionValues {
 
