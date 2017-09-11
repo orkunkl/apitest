@@ -27,8 +27,8 @@ object ParseOperations {
 
   def StringComparison(res: Json, api: Json, trace: List[String]): ErrorOption = {
     for {
-      resString <- res.asString
-      apiString <- api.asString
+      resString <- res.asString orElse res.asNumber.map(_.toString)
+      apiString <- api.asString orElse api.asNumber.map(_.toString)
     } yield {
       if (resString == apiString) List.empty
       else List(FoundError(trace, s"Value $resString is not equal to $apiString"))

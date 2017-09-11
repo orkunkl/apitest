@@ -191,8 +191,8 @@ object Main {
 
   def matchFieldAndValues(res: Json, api: Json, trace: List[String] = List("root")): ErrorEither = {
     val parseProcess =
-      ParseOperations.BigDecimalComparison(res, api, trace) orElse
-        ParseOperations.DateTimeComparison(res, api, trace) orElse
+      ParseOperations.DateTimeComparison(res, api, trace) orElse
+        ParseOperations.BigDecimalComparison(res, api, trace) orElse
         ParseOperations.StringComparison(res, api, trace)
     parseProcess.toRight(FoundError(trace, s" Unknown type on ${res.name}"))
   }
