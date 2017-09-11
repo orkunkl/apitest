@@ -7,7 +7,6 @@ scalaVersion := "2.12.3"
 scalafmtOnCompile in ThisBuild := true
 scalafmtTestOnCompile := true // current project
 
-wartremoverWarnings ++= Warts.all // or Warts.unsafe
 
 libraryDependencies ++= Seq(
   "org.http4s"             %% "http4s-blaze-client" % "0.15.16a",
