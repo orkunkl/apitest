@@ -12,9 +12,11 @@ object Main {
 
   type ErrorEither = Either[FoundError, List[FoundError]]
 
-  final val resourceBaseUrl: String = "https://cheetah.rc-socrata.com/resource/"
-  final val apiBaseUrl: String      = "https://cheetah.rc-socrata.com/api/odata/v4/"
-  final val HttpRetryCount: Int     = 10
+  final val resourceBaseUrl: String         = "https://cheetah.rc-socrata.com/resource/"
+  final val apiBaseUrl: String              = "https://cheetah.rc-socrata.com/api/odata/v4/"
+  final val HttpRetryCount: Int             = 10
+  final val apiExcludedKeys: Seq[String]    = List("__id")
+  final val resApiExcludedKeys: Seq[String] = List.empty
 
   def main(args: Array[String]): Unit = {
 
@@ -34,7 +36,11 @@ object Main {
       apiJsonValue <- apiJson
         .as[JsonObject]
         .flatMap(_.apply("value").toRight("value not found on api"))
-      testResult <- test(resApiJson, apiJsonValue)
+
+      apiExcluded    = apiJsonValue.mapObject(_.filterKeys(a => apiExcludedKeys.contains(a)))
+      resApiExcluded = apiJsonValue.mapObject(_.filterKeys(a => resApiExcludedKeys.contains(a)))
+
+      testResult <- test(resApiExcluded, apiExcluded)
     } yield testResult
 
     tests
@@ -65,10 +71,10 @@ object Main {
       apiSetsJsonObject <- Try(httpClient.expect[Json](apiBaseUrl).unsafePerformSync).toOption
         .flatMap(_.asObject)
         .toRight("")
+
       apiSetsJsons <- apiSetsJsonObject.apply("value").flatMap(x => x.asArray).toRight("")
 
       randomUrl <- RetryUrlUntilNotEmpty(httpClient, apiSetsJsons)
-      _ = println("Chosen random api url " + randomUrl)
 
       apiUrl = apiSetsUrl / randomUrl
 
@@ -78,9 +84,6 @@ object Main {
         .left
         .map(_ => s"Could not parse ${resourceBaseUrl + randomUrl} to Uri")
 
-      _ = println("Chosen random resource api url " + resUrl)
-      _ = println("Chosen random api url " + apiUrl)
-
     } yield (resUrl, apiUrl)
 
   def RetryUrlUntilNotEmpty(http1Client: Client,
@@ -89,14 +92,16 @@ object Main {
     if (leftRetry > 0) {
       val tryRandomUrl = for {
 
-        chosenJsonObj <- Try(apiSets.apply(Random.nextInt(apiSets.size))).toEither
-          .flatMap(_.asObject.toRight(""))
+        chosenJsonObj <- Option(apiSets.apply(Random.nextInt(apiSets.size)))
+          .flatMap(_.asObject)
+          .toRight("")
         candidateUrl <- chosenJsonObj.apply("url").toRight("").flatMap(x => x.asString.toRight(""))
         apiUrl       <- Uri.fromString(apiBaseUrl + candidateUrl).toEither.left.map(_.sanitized)
         call         <- Try(http1Client.expect[Json](apiUrl).unsafePerformSync).toEither
         checkIfEmpty <- call.asObject
-          .flatMap(_.apply("value").map(_.asArray))
-          .flatMap(x => if (x.size != 0) Some(x) else None)
+          .flatMap(_.apply("value"))
+          .flatMap(_.asArray)
+          .flatMap(x => if (x.nonEmpty) Some(x) else None)
           .toRight("")
       } yield candidateUrl
 
