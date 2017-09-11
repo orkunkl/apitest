@@ -67,6 +67,14 @@ class CompareTest extends FlatSpec with EitherValues with OptionValues {
     BigDecimalComparison(345.asJson, "345".asJson, List("root")).value should be(List.empty)
   }
 
+  "BigDecimalComparison" should "not match asd and 3.45 using BiggerDecimal Matching" in {
+    BigDecimalComparison("asd".asJson, 3.45.asJson, List("root")) should be(None)
+  }
+
+  it should "not match asd and asd using BiggerDecimal Matching" in {
+    BigDecimalComparison("asd".asJson, "asd".asJson, List("root")) should be(None)
+  }
+
   "DateTimeComparison" should "match 2016-05-23T00:00:00 and 2016-05-23T00:00:00Z" in {
     DateTimeComparison(jsonDateTime1, jsonDateTime2, List("root")).value should be(List.empty)
   }

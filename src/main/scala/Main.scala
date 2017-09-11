@@ -191,7 +191,8 @@ object Main {
     val parseProcess =
       ParseOperations.DateTimeComparison(res, api, trace) orElse
         ParseOperations.BigDecimalComparison(res, api, trace) orElse
-        ParseOperations.StringComparison(res, api, trace)
+        ParseOperations.StringComparison(res, api, trace) orElse
+        ParseOperations.NullComparison(res, api, trace)
     parseProcess.toRight(FoundError(trace, s" Unknown type on ${res.name}"))
   }
 

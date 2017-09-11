@@ -45,4 +45,14 @@ object ParseOperations {
       if (resDateTime.toLocalDateTime == apiDateTime.toLocalDateTime) List.empty
       else List(FoundError(trace, s"DateTime $resString is not equal to $apiString"))
     }
+
+  def NullComparison(res: Json, api: Json, trace: List[String]): ErrorOption =
+    (res.isNull, api.isNull) match {
+      case (true, true) => Some(List.empty)
+      case (true, false) =>
+        Some(List(FoundError(trace, s"DateTime resource value is null but api is not")))
+      case (true, false) =>
+        Some(List(FoundError(trace, s"DateTime api value is null but resource is not")))
+      case (false, false) => None
+    }
 }
