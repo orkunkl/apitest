@@ -12,6 +12,10 @@ object Main {
 
   type ErrorEither = Either[FoundError, List[FoundError]]
 
+  final val resourceBaseUrl: String = "https://cheetah.rc-socrata.com/resource/"
+  final val apiBaseUrl: String      = "https://cheetah.rc-socrata.com/api/odata/v4/"
+  final val HttpRetryCount: Int     = 10
+
   def main(args: Array[String]): Unit = {
 
     val httpClient = PooledHttp1Client()
@@ -25,10 +29,7 @@ object Main {
 
       callTry <- Try(httpClient.expect[Json](resUrl).unsafePerformSync,
                      httpClient.expect[Json](apiUrl).unsafePerformSync).toEither
-      //callTry <-  (parse(scala.io.Source.fromFile("src/test/resApi.json").mkString),  parse(scala.io.Source.fromFile("src/test/api.json").mkString))
       (resApiJson, apiJson) = callTry
-      /*resApiJson <- parse(scala.io.Source.fromFile("src/test/resApi.json").mkString)
-      apiJson    <- parse(scala.io.Source.fromFile("src/test/api.json").mkString)*/
 
       apiJsonValue <- apiJson
         .as[JsonObject]
@@ -39,7 +40,7 @@ object Main {
     tests
       .map(errors => if (errors.isEmpty) println("No Errors Found") else errors.foreach(println))
       .left
-      .map(_ => println("Unknown error found"))
+      .map(println)
 
     httpClient.shutdownNow()
   }
@@ -53,32 +54,55 @@ object Main {
     if (tests.isLeft) tests.swap.map(x => List(x)).left.map(x => "" /*unreachable code*/ )
     else tests
   }
-  def createUrls(httpClient: Client): Either[Object, (Uri, Uri)] =
+
+  def createUrls(httpClient: Client): Either[String, (Uri, Uri)] =
     for {
       apiSetsUrl <- Uri
-        .fromString("https://cheetah.rc-socrata.com/api/odata/v4/")
+        .fromString(apiBaseUrl)
         .toEither
-      apiUrlCall        <- Try(httpClient.expect[Json](apiSetsUrl).unsafePerformSync).toEither
-      apiRetrieveValues <- apiUrlCall.hcursor.get[Json]("value")
-      apiRandomUrl <- apiRetrieveValues.asArray
-        .toRight("could not parse value to jsonArray")
-        .flatMap(
-          x =>
-            apiRetrieveValues.hcursor
-              .downN(Random.nextInt(x.size))
-              .get[String]("url"))
+        .left
+        .map(_ => s"Could not parse $apiBaseUrl to uri")
+      apiSetsJsonObject <- Try(httpClient.expect[Json](apiBaseUrl).unsafePerformSync).toOption
+        .flatMap(_.asObject)
+        .toRight("")
+      apiSetsJsons <- apiSetsJsonObject.apply("value").flatMap(x => x.asArray).toRight("")
 
-      _ = println("Chosen random api url " + apiRandomUrl)
+      randomUrl <- RetryUrlUntilNotEmpty(httpClient, apiSetsJsons)
+      _ = println("Chosen random api url " + randomUrl)
 
-      apiUrl = apiSetsUrl / apiRandomUrl
+      apiUrl = apiSetsUrl / randomUrl
 
       resUrl <- Uri
-        .fromString("https://cheetah.rc-socrata.com/resource/" + apiRandomUrl)
+        .fromString(resourceBaseUrl + randomUrl)
         .toEither
+        .left
+        .map(_ => s"Could not parse ${resourceBaseUrl + randomUrl} to Uri")
+
       _ = println("Chosen random resource api url " + resUrl)
       _ = println("Chosen random api url " + apiUrl)
 
     } yield (resUrl, apiUrl)
+
+  def RetryUrlUntilNotEmpty(http1Client: Client,
+                            apiSets: Vector[Json],
+                            leftRetry: Int = HttpRetryCount): Either[String, String] =
+    if (leftRetry > 0) {
+      val tryRandomUrl = for {
+
+        chosenJsonObj <- Try(apiSets.apply(Random.nextInt(apiSets.size))).toEither
+          .flatMap(_.asObject.toRight(""))
+        candidateUrl <- chosenJsonObj.apply("url").toRight("").flatMap(x => x.asString.toRight(""))
+        apiUrl       <- Uri.fromString(apiBaseUrl + candidateUrl).toEither.left.map(_.sanitized)
+        call         <- Try(http1Client.expect[Json](apiUrl).unsafePerformSync).toEither
+        checkIfEmpty <- call.asObject
+          .flatMap(_.apply("value").map(_.asArray))
+          .flatMap(x => if (x.size != 0) Some(x) else None)
+          .toRight("")
+      } yield candidateUrl
+
+      tryRandomUrl.left.flatMap(_ => RetryUrlUntilNotEmpty(http1Client, apiSets, leftRetry - 1))
+    } else
+      Left(s"An Url with data could not be found after $HttpRetryCount retries")
 
   /**
     *
